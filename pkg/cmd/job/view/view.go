@@ -239,6 +239,9 @@ func promptForJob(opts ViewOptions, client *api.Client, repo ghrepo.Interface, r
 		Options:  candidates,
 		PageSize: 10,
 	}, &selected)
+	if err != nil {
+		return "", err
+	}
 
 	return fmt.Sprintf("%d", jobs[selected].ID), nil
 }
