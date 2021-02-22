@@ -115,6 +115,9 @@ func listRun(opts *ListOptions) error {
 
 		if opts.PlainOutput {
 			elapsed := run.UpdatedAt.Sub(run.CreatedAt)
+			if elapsed < 0 {
+				elapsed = 0
+			}
 			tp.AddField(elapsed.String(), nil, nil)
 		}
 

@@ -162,13 +162,18 @@ func runView(opts *ViewOptions) error {
 
 	ago := opts.Now().Sub(job.StartedAt)
 	elapsed := job.CompletedAt.Sub(job.StartedAt)
-	// TODO prob format elapsed?
+
+	elapsedStr := fmt.Sprintf(" in %s", elapsed)
+
+	if elapsed < 0 {
+		elapsedStr = ""
+	}
 
 	fmt.Fprintf(out, "%s (ID %s)\n", cs.Bold(job.Name), cs.Cyanf("%d", job.ID))
-	fmt.Fprintf(out, "%s %s in %s\n",
+	fmt.Fprintf(out, "%s %s%s\n",
 		shared.Symbol(cs, job.Status, job.Conclusion),
 		utils.FuzzyAgo(ago),
-		elapsed)
+		elapsedStr)
 
 	fmt.Fprintln(out)
 
