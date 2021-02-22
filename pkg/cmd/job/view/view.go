@@ -57,10 +57,6 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 				opts.Prompt = true
 			}
 
-			if opts.Log && len(args) == 0 {
-				return &cmdutil.FlagError{Err: errors.New("job ID required when passing --log")}
-			}
-
 			if runF != nil {
 				return runF(opts)
 			}
