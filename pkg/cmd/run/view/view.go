@@ -23,8 +23,9 @@ type ViewOptions struct {
 	RunID   string
 	Verbose bool
 
-	Prompt       bool
-	ShowProgress bool
+	Prompt        bool
+	ShowProgress  bool
+	MachineOutput bool
 
 	Now func() time.Time
 }
@@ -47,6 +48,7 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 
 			terminal := opts.IO.IsStdoutTTY() && opts.IO.IsStdinTTY()
 			opts.ShowProgress = terminal
+			opts.MachineOutput = !terminal
 
 			if len(args) > 0 {
 				opts.RunID = args[0]
@@ -127,13 +129,13 @@ func runView(opts *ViewOptions) error {
 	if opts.ShowProgress {
 		opts.IO.StopProgressIndicator()
 	}
-	err = renderRun(*opts, *run, jobs, annotations)
-	if err != nil {
-		// TODO handle error
-		return err
+
+	// TODO rename PlainOutput to MachineOutput in that other place
+	if opts.MachineOutput {
+		return renderRunMachine(*opts, *run, jobs, annotations)
 	}
 
-	return nil
+	return renderRun(*opts, *run, jobs, annotations)
 }
 
 func titleForRun(cs *iostreams.ColorScheme, run shared.Run) string {
@@ -148,7 +150,12 @@ func titleForRun(cs *iostreams.ColorScheme, run shared.Run) string {
 }
 
 // TODO consider context struct for all this:
+func renderRunMachine(opts ViewOptions, run shared.Run, jobs []shared.Job, annotations []shared.Annotation) error {
+	// TODO nontty output
+	return nil
+}
 
+// TODO consider context struct for all this:
 func renderRun(opts ViewOptions, run shared.Run, jobs []shared.Job, annotations []shared.Annotation) error {
 	out := opts.IO.Out
 	cs := opts.IO.ColorScheme()
