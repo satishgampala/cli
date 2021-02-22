@@ -19,9 +19,10 @@ func NewCmdActions(f *cmdutil.Factory) *cobra.Command {
 	}
 
 	cmd := &cobra.Command{
-		Use:   "actions",
-		Short: "Learn about working with GitHub acitons",
-		Args:  cobra.ExactArgs(0),
+		Use:    "actions",
+		Short:  "Learn about working with GitHub actions",
+		Args:   cobra.ExactArgs(0),
+		Hidden: true,
 		Run: func(cmd *cobra.Command, args []string) {
 			actionsRun(opts)
 		},
@@ -34,6 +35,11 @@ func actionsRun(opts ActionsOptions) {
 	cs := opts.IO.ColorScheme()
 	fmt.Fprint(opts.IO.Out, heredoc.Docf(`
 			Welcome to GitHub Actions on the command line.
+
+			This part of gh is in beta and subject to change!
+
+			To follow along while we get to GA, please see this
+			tracking issue: https://github.com/cli/cli/issues/2889
 
 			%s
 			gh run list:    List recent workflow runs

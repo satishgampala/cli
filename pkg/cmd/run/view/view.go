@@ -39,7 +39,8 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 		Use:   "view [<run-id>]",
 		Short: "View a summary of a workflow run",
 		// TODO examples?
-		Args: cobra.MaximumNArgs(1),
+		Args:   cobra.MaximumNArgs(1),
+		Hidden: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// support `-R, --repo` override
 			opts.BaseRepo = f.BaseRepo
