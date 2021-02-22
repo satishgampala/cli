@@ -54,6 +54,7 @@ type Run struct {
 	JobsURL    string `json:"jobs_url"`
 	HeadCommit Commit `json:"head_commit"`
 	HeadSha    string `json:"head_sha"`
+	URL        string `json:"html_url"`
 }
 
 type Commit struct {
@@ -77,6 +78,7 @@ type Job struct {
 	Steps       []Step
 	StartedAt   time.Time `json:"started_at"`
 	CompletedAt time.Time `json:"completed_at"`
+	URL         string    `json:"html_url"`
 }
 
 type Step struct {

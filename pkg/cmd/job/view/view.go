@@ -183,20 +183,19 @@ func runView(opts *ViewOptions) error {
 			step.Name)
 	}
 
-	if len(annotations) == 0 {
-		return nil
-	}
+	if len(annotations) > 0 {
+		fmt.Fprintln(out)
+		fmt.Fprintln(out, cs.Bold("ANNOTATIONS"))
 
-	fmt.Fprintln(out)
-	fmt.Fprintln(out, cs.Bold("ANNOTATIONS"))
-
-	for _, a := range annotations {
-		fmt.Fprintf(out, "%s %s\n", a.Symbol(cs), a.Message)
-		fmt.Fprintln(out, cs.Grayf("%s#%d\n", a.Path, a.StartLine))
+		for _, a := range annotations {
+			fmt.Fprintf(out, "%s %s\n", a.Symbol(cs), a.Message)
+			fmt.Fprintln(out, cs.Grayf("%s#%d\n", a.Path, a.StartLine))
+		}
 	}
 
 	fmt.Fprintln(out)
 	fmt.Fprintf(out, "To see the full logs for this job, try: gh job view %s --log\n", jobID)
+	fmt.Fprintf(out, cs.Gray("View this job on GitHub: %s\n"), job.URL)
 
 	return nil
 }

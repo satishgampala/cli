@@ -177,20 +177,20 @@ func renderRun(opts ViewOptions, run shared.Run, jobs []shared.Job, annotations 
 		}
 	}
 
-	if len(annotations) == 0 {
-		return nil
+	if len(annotations) > 0 {
+		fmt.Fprintln(out)
+		fmt.Fprintln(out, cs.Bold("ANNOTATIONS"))
+
+		for _, a := range annotations {
+			fmt.Fprintf(out, "%s %s\n", a.Symbol(cs), a.Message)
+			fmt.Fprintln(out, cs.Grayf("%s: %s#%d\n",
+				a.JobName, a.Path, a.StartLine))
+		}
 	}
 
 	fmt.Fprintln(out)
-	fmt.Fprintln(out, cs.Bold("ANNOTATIONS"))
-
-	for _, a := range annotations {
-		fmt.Fprintf(out, "%s %s\n", a.Symbol(cs), a.Message)
-		fmt.Fprintln(out, cs.Grayf("%s: %s#%d\n",
-			a.JobName, a.Path, a.StartLine))
-	}
-
 	fmt.Fprintln(out, "For more information about a job, try: gh job view <job-id>")
+	fmt.Fprintf(out, cs.Gray("view this run on GitHub: %s\n"), run.URL)
 
 	return nil
 }
