@@ -163,6 +163,13 @@ func renderRun(opts ViewOptions, run shared.Run, jobs []shared.Job, annotations 
 
 	fmt.Fprintf(out, "Triggered via %s %s\n", run.Event, utils.FuzzyAgo(ago))
 	fmt.Fprintln(out)
+
+	if len(jobs) == 0 && run.Conclusion == shared.Failure {
+		brokenWorkflowMsg := fmt.Sprintf("This run likely failed because of a workflow issue.\n  For more information, see: %s", run.URL)
+		fmt.Fprintf(out, "%s %s\n", cs.FailureIcon(), cs.Bold(brokenWorkflowMsg))
+		return nil
+	}
+
 	fmt.Fprintln(out, cs.Bold("JOBS"))
 
 	for _, job := range jobs {
