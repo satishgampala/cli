@@ -157,6 +157,7 @@ func renderRun(opts ViewOptions, run shared.Run, jobs []shared.Job, annotations 
 	symbol := shared.Symbol(cs, run.Status, run.Conclusion)
 	id := cs.Cyanf("%d", run.ID)
 
+	fmt.Fprintln(out)
 	fmt.Fprintf(out, "%s %s · %s\n", symbol, title, id)
 
 	ago := opts.Now().Sub(run.CreatedAt)
