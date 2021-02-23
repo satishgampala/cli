@@ -20,8 +20,9 @@ type ViewOptions struct {
 	IO         *iostreams.IOStreams
 	BaseRepo   func() (ghrepo.Interface, error)
 
-	RunID   string
-	Verbose bool
+	RunID      string
+	Verbose    bool
+	ExitStatus bool
 
 	Prompt       bool
 	ShowProgress bool
@@ -63,6 +64,7 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 		},
 	}
 	cmd.Flags().BoolVarP(&opts.Verbose, "verbose", "v", false, "Show job steps")
+	cmd.Flags().BoolVarP(&opts.ExitStatus, "exit-status", "e", false, "Exit with non-zero status if run failed")
 
 	return cmd
 }
@@ -166,8 +168,16 @@ func renderRun(opts ViewOptions, run shared.Run, jobs []shared.Job, annotations 
 	fmt.Fprintln(out)
 
 	if len(jobs) == 0 && run.Conclusion == shared.Failure {
-		brokenWorkflowMsg := fmt.Sprintf("This run likely failed because of a workflow issue.\n  For more information, see: %s", run.URL)
-		fmt.Fprintf(out, "%s %s\n", cs.FailureIcon(), cs.Bold(brokenWorkflowMsg))
+		fmt.Fprintf(out, "%s %s\n",
+			cs.FailureIcon(),
+			cs.Bold("This run likely failed because of a workflow file issue."))
+
+		fmt.Fprintln(out)
+		fmt.Fprintf(out, "For more information, see: %s\n", cs.Bold(run.URL))
+
+		if opts.ExitStatus && shared.IsFailureState(run.Conclusion) {
+			return cmdutil.SilentError
+		}
 		return nil
 	}
 
@@ -200,6 +210,10 @@ func renderRun(opts ViewOptions, run shared.Run, jobs []shared.Job, annotations 
 	fmt.Fprintln(out)
 	fmt.Fprintln(out, "For more information about a job, try: gh job view <job-id>")
 	fmt.Fprintf(out, cs.Gray("view this run on GitHub: %s\n"), run.URL)
+
+	if opts.ExitStatus && shared.IsFailureState(run.Conclusion) {
+		return cmdutil.SilentError
+	}
 
 	return nil
 }
