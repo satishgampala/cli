@@ -64,6 +64,7 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 		},
 	}
 	cmd.Flags().BoolVarP(&opts.Verbose, "verbose", "v", false, "Show job steps")
+	// TODO should we try and expose pending via another exit code?
 	cmd.Flags().BoolVarP(&opts.ExitStatus, "exit-status", "e", false, "Exit with non-zero status if run failed")
 
 	return cmd

@@ -22,8 +22,9 @@ type ViewOptions struct {
 	IO         *iostreams.IOStreams
 	BaseRepo   func() (ghrepo.Interface, error)
 
-	JobID string
-	Log   bool
+	JobID      string
+	Log        bool
+	ExitStatus bool
 
 	Prompt       bool
 	ShowProgress bool
@@ -64,8 +65,9 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 			return runView(opts)
 		},
 	}
-
 	cmd.Flags().BoolVarP(&opts.Log, "log", "l", false, "Print full logs for job")
+	// TODO should we try and expose pending via another exit code?
+	cmd.Flags().BoolVarP(&opts.ExitStatus, "exit-status", "e", false, "Exit with non-zero status if job failed")
 
 	return cmd
 }
@@ -148,13 +150,18 @@ func runView(opts *ViewOptions) error {
 				break
 			}
 		}
+
+		if opts.ExitStatus && shared.IsFailureState(job.Conclusion) {
+			return cmdutil.SilentError
+		}
+
 		return nil
 	}
 
 	annotations, err := shared.GetAnnotations(client, repo, *job)
 	if err != nil {
 		// TODO handle error
-		return nil
+		return err
 	}
 
 	if opts.ShowProgress {
@@ -197,6 +204,10 @@ func runView(opts *ViewOptions) error {
 	fmt.Fprintln(out)
 	fmt.Fprintf(out, "To see the full logs for this job, try: gh job view %s --log\n", jobID)
 	fmt.Fprintf(out, cs.Gray("View this job on GitHub: %s\n"), job.URL)
+
+	if opts.ExitStatus && shared.IsFailureState(job.Conclusion) {
+		return cmdutil.SilentError
+	}
 
 	return nil
 }
