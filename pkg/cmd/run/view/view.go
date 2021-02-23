@@ -37,11 +37,20 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 		Now:        time.Now,
 	}
 	cmd := &cobra.Command{
-		Use:   "view [<run-id>]",
-		Short: "View a summary of a workflow run",
-		// TODO examples?
+		Use:    "view [<run-id>]",
+		Short:  "View a summary of a workflow run",
 		Args:   cobra.MaximumNArgs(1),
 		Hidden: true,
+		Example: heredoc.Doc(`
+		  # Interactively select a run to view
+		  $ gh run view
+
+		  # View a specific run
+		  $ gh run view 0451
+
+		  # Exit non-zero if a run failed
+		  $ gh run view 0451 -e && echo "job pending or passed"
+		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// support `-R, --repo` override
 			opts.BaseRepo = f.BaseRepo
@@ -73,15 +82,13 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 func runView(opts *ViewOptions) error {
 	c, err := opts.HttpClient()
 	if err != nil {
-		// TODO error handle
-		return err
+		return fmt.Errorf("failed to create http client: %w", err)
 	}
 	client := api.NewClientFromHTTP(c)
 
 	repo, err := opts.BaseRepo()
 	if err != nil {
-		// TODO error handle
-		return err
+		return fmt.Errorf("failed to determine base repo: %w", err)
 	}
 
 	runID := opts.RunID
@@ -90,7 +97,6 @@ func runView(opts *ViewOptions) error {
 		cs := opts.IO.ColorScheme()
 		runID, err = shared.PromptForRun(cs, client, repo)
 		if err != nil {
-			// TODO error handle
 			return err
 		}
 	}
@@ -100,14 +106,12 @@ func runView(opts *ViewOptions) error {
 	}
 	run, err := shared.GetRun(client, repo, runID)
 	if err != nil {
-		// TODO error handle
-		return err
+		return fmt.Errorf("failed to get run: %w", err)
 	}
 
 	jobs, err := shared.GetJobs(client, repo, *run)
 	if err != nil {
-		// TODO error handle
-		return err
+		return fmt.Errorf("failed to get jobs: %w", err)
 	}
 
 	var annotations []shared.Annotation
@@ -123,8 +127,7 @@ func runView(opts *ViewOptions) error {
 	}
 
 	if annotationErr != nil {
-		// TODO handle error
-		return annotationErr
+		return fmt.Errorf("failed to get annotations: %w", annotationErr)
 	}
 
 	if opts.ShowProgress {
@@ -132,7 +135,6 @@ func runView(opts *ViewOptions) error {
 	}
 	err = renderRun(*opts, *run, jobs, annotations)
 	if err != nil {
-		// TODO handle error
 		return err
 	}
 

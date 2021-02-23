@@ -70,26 +70,24 @@ func listRun(opts *ListOptions) error {
 	}
 	baseRepo, err := opts.BaseRepo()
 	if err != nil {
-		// TODO better err handle
-		return err
+		return fmt.Errorf("failed to determine base repo: %w", err)
 	}
 
 	c, err := opts.HttpClient()
 	if err != nil {
-		// TODO better error handle
-		return err
+		return fmt.Errorf("failed to create http client: %w", err)
 	}
 	client := api.NewClientFromHTTP(c)
 
 	runs, err := shared.GetRuns(client, baseRepo, opts.Limit)
 	if err != nil {
-		// TODO better error handle
-		return err
+		return fmt.Errorf("failed to get runs: %w", err)
 	}
 
 	tp := utils.NewTablePrinter(opts.IO)
 
 	cs := opts.IO.ColorScheme()
+	out := opts.IO.Out
 
 	if opts.ShowProgress {
 		opts.IO.StopProgressIndicator()
@@ -124,12 +122,11 @@ func listRun(opts *ListOptions) error {
 
 	err = tp.Render()
 	if err != nil {
-		// TODO better error handle
 		return err
 	}
 
-	fmt.Fprintln(opts.IO.Out)
-	fmt.Fprintln(opts.IO.Out, "For details on a run, try: gh run view <run-id>")
+	fmt.Fprintln(out)
+	fmt.Fprintln(out, "For details on a run, try: gh run view <run-id>")
 
 	return nil
 }

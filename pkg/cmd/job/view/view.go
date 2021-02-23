@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/MakeNowJust/heredoc"
 	"github.com/cli/cli/api"
 	"github.com/cli/cli/internal/ghrepo"
 	"github.com/cli/cli/pkg/cmd/run/shared"
@@ -39,11 +40,20 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 		Now:        time.Now,
 	}
 	cmd := &cobra.Command{
-		Use:   "view [<job-id>]",
-		Short: "View the summary or full logs of a workflow run's job",
-		// TODO examples?
+		Use:    "view [<job-id>]",
+		Short:  "View the summary or full logs of a workflow run's job",
 		Args:   cobra.MaximumNArgs(1),
 		Hidden: true,
+		Example: heredoc.Doc(`
+			# Interactively select a run then job
+			$ gh job view
+
+			# Just view the logs for a job
+			$ gh job view 0451 --log
+
+			# Exit non-zero if a job failed
+			$ gh job view 0451 -e && echo "job pending or passed"
+		`),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// support `-R, --repo` override
 			opts.BaseRepo = f.BaseRepo
@@ -75,15 +85,13 @@ func NewCmdView(f *cmdutil.Factory, runF func(*ViewOptions) error) *cobra.Comman
 func runView(opts *ViewOptions) error {
 	c, err := opts.HttpClient()
 	if err != nil {
-		// TODO error handle
-		return err
+		return fmt.Errorf("failed to create http client: %w", err)
 	}
 	client := api.NewClientFromHTTP(c)
 
 	repo, err := opts.BaseRepo()
 	if err != nil {
-		// TODO error handle
-		return err
+		return fmt.Errorf("failed to determine base repo: %w", err)
 	}
 
 	out := opts.IO.Out
@@ -93,7 +101,6 @@ func runView(opts *ViewOptions) error {
 	if opts.Prompt {
 		runID, err := shared.PromptForRun(cs, client, repo)
 		if err != nil {
-			// TODO error handle
 			return err
 		}
 		// TODO I'd love to overwrite the result of the prompt since it adds visual noise but I'm not sure
@@ -106,8 +113,7 @@ func runView(opts *ViewOptions) error {
 
 		run, err := shared.GetRun(client, repo, runID)
 		if err != nil {
-			// TODO error handle
-			return err
+			return fmt.Errorf("failed to get run: %w", err)
 		}
 
 		if opts.ShowProgress {
@@ -116,7 +122,6 @@ func runView(opts *ViewOptions) error {
 
 		jobID, err = promptForJob(*opts, client, repo, *run)
 		if err != nil {
-			// TODO error handle
 			return err
 		}
 
@@ -129,8 +134,7 @@ func runView(opts *ViewOptions) error {
 
 	job, err := getJob(client, repo, jobID)
 	if err != nil {
-		// TODO error handle
-		return err
+		return fmt.Errorf("failed to get job: %w", err)
 	}
 
 	if opts.Log {
@@ -160,8 +164,7 @@ func runView(opts *ViewOptions) error {
 
 	annotations, err := shared.GetAnnotations(client, repo, *job)
 	if err != nil {
-		// TODO handle error
-		return err
+		return fmt.Errorf("failed to get annotations: %w", err)
 	}
 
 	if opts.ShowProgress {
