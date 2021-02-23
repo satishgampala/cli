@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/MakeNowJust/heredoc"
 	"github.com/cli/cli/api"
 	"github.com/cli/cli/internal/ghrepo"
 	"github.com/cli/cli/pkg/cmd/run/shared"
@@ -104,9 +105,16 @@ func runView(opts *ViewOptions) error {
 	if opts.ShowProgress {
 		opts.IO.StartProgressIndicator()
 	}
+
 	run, err := shared.GetRun(client, repo, runID)
 	if err != nil {
 		return fmt.Errorf("failed to get run: %w", err)
+	}
+
+	prNumber := ""
+	number, err := prForRun(client, repo, *run)
+	if err == nil {
+		prNumber = fmt.Sprintf(" #%d", number)
 	}
 
 	jobs, err := shared.GetJobs(client, repo, *run)
@@ -133,32 +141,12 @@ func runView(opts *ViewOptions) error {
 	if opts.ShowProgress {
 		opts.IO.StopProgressIndicator()
 	}
-	err = renderRun(*opts, *run, jobs, annotations)
-	if err != nil {
-		return err
-	}
 
-	return nil
-}
-
-func titleForRun(cs *iostreams.ColorScheme, run shared.Run) string {
-	// TODO how to obtain? i can get a SHA but it's not immediately clear how to get from sha -> pr
-	// without a ton of hops
-	prID := ""
-
-	return fmt.Sprintf("%s %s%s",
-		cs.Bold(run.HeadBranch),
-		run.Name,
-		prID)
-}
-
-// TODO consider context struct for all this:
-
-func renderRun(opts ViewOptions, run shared.Run, jobs []shared.Job, annotations []shared.Annotation) error {
 	out := opts.IO.Out
 	cs := opts.IO.ColorScheme()
 
-	title := titleForRun(cs, run)
+	title := fmt.Sprintf("%s %s%s",
+		cs.Bold(run.HeadBranch), run.Name, prNumber)
 	symbol := shared.Symbol(cs, run.Status, run.Conclusion)
 	id := cs.Cyanf("%d", run.ID)
 
@@ -219,4 +207,48 @@ func renderRun(opts ViewOptions, run shared.Run, jobs []shared.Job, annotations 
 	}
 
 	return nil
+}
+
+func prForRun(client *api.Client, repo ghrepo.Interface, run shared.Run) (int, error) {
+	type response struct {
+		Repository struct {
+			PullRequests struct {
+				Nodes []struct {
+					Number int
+				}
+			}
+		}
+		Number int
+	}
+
+	variables := map[string]interface{}{
+		"owner":       repo.RepoOwner(),
+		"repo":        repo.RepoName(),
+		"headRefName": run.HeadBranch,
+	}
+
+	query := `
+		query PullRequestForRun($owner: String!, $repo: String!, $headRefName: String!) {
+			repository(owner: $owner, name: $repo) {
+				pullRequests(headRefName: $headRefName, first: 1, orderBy: { field: CREATED_AT, direction: DESC }) {
+					nodes {
+						number
+					}
+				}
+			}
+		}`
+
+	var resp response
+
+	err := client.GraphQL(repo.RepoHost(), query, variables, &resp)
+	if err != nil {
+		return -1, err
+	}
+
+	prs := resp.Repository.PullRequests.Nodes
+	if len(prs) == 0 {
+		return -1, fmt.Errorf("no matching PR found for %s", run.HeadBranch)
+	}
+
+	return prs[0].Number, nil
 }

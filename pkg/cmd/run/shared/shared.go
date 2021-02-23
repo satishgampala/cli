@@ -31,12 +31,7 @@ const (
 	StartupFailure = "startup_failure"
 	Success        = "success"
 	TimedOut       = "timed_out"
-
-	// TODO events
 )
-
-// TODO URL printing/-w
-// TODO various nontty support
 
 type Status string
 type Conclusion string
